@@ -12,7 +12,7 @@ from vis import display_r2, plot_histograms, summarize_data, plot_sba_analysis
 # Streamlit UI
 st.set_page_config(layout="wide")
 st.title("Standardizing College GPA for University Admissions: A Moderation Tool for Fairer Intake Decisions")
-
+st.divider()
 with st.container():
     st.markdown(r"""
     For this tool to work, ensure that your datasets meet the following requirements:
@@ -53,6 +53,7 @@ st.markdown(r"""
 
     
 # Dropdown for model selection
+st.divider()
 st.subheader("Step 0: Select Moderation Model")
 model_options = {
     "Inter-Score Regression with Pooled Standardization": (train_hkeaa_model, predict_hkeaa_model),
@@ -67,6 +68,7 @@ MODEL_STATS = None
 col1,col2=st.columns(2)
 with col1:
     # Step 1: Upload training data
+    st.divider()
     st.subheader("Step 1: Upload Training Data")
     training_file = st.file_uploader("Upload a CSV/Excel file with 'College', 'Raw College GPA (X)', 'University Performance GPA (Z)'", type=["csv", "xlsx"])
 
@@ -79,10 +81,13 @@ with col1:
             MODEL_STATS = train_model_func(df_train)
 
             with col2:
+                st.divider()
                 st.subheader('Training Dataset Results')
+                st.write('Model Coefficients')
                 # Display model parameters
                 st.write(MODEL_STATS)
                 # Display histograms
+                st.write('**Distribution of Raw College GPA (X), Moderated GPA (Y) and University GPA (Z)**')
                 fig, axes = plt.subplots(1, 3, figsize=(12, 3.5), dpi=600)
                 fig.suptitle(f"Results for: {selected_model}", fontsize=12)
                 plot_histograms(df_train, "Raw College GPA (X)", "College", ax=axes[0], title="(a).Raw College GPA",palette='bright')
@@ -98,6 +103,7 @@ with col1:
                 display_r2(df_train)
                 r2_fig=plot_sba_analysis(df_train)
                 r2_fig.suptitle(f"{selected_model}")
+                st.markdown("**Coefficient of Determination (R2)**")
 
                 st.pyplot(r2_fig)
                 
@@ -105,6 +111,7 @@ with col1:
             st.error("File must contain 'College', 'Raw College GPA (X)', and 'University Performance GPA (Z)'.")
 with col1:
     # Step 2: Upload test data
+    st.divider()
     st.subheader("Step 2: Upload Test Data")
     test_file = st.file_uploader("Upload a CSV/Excel file with 'College' and 'Raw College GPA (X)'", type=["csv", "xlsx"])
 
@@ -116,6 +123,7 @@ with col1:
             df_result = predict_model_func(df_test, MODEL_STATS)
 
             with col2:
+                st.divider()
                 st.subheader('Testing Dataset Results')
                 if {'University Performance GPA (Z)'}.issubset(df_train.columns):
                     display_r2(df_result)

@@ -27,13 +27,11 @@ def summarize_data(df):
     raw_college_gpa_stats = df['Raw College GPA (X)'].describe()[['min', 'mean', 'max', 'std']]
 
     # Display results using Streamlit
-    st.subheader("Dataset Summary")
     st.write(f"**Total number of data points:** {total_points}")
 
-    st.write("Number of Data Points per College")
     st.write(points_per_college)
 
-    st.subheader("Basic Statistics")
+    st.write("Basic Statistics")
     st.dataframe(round(df.describe(),2))
 
 
@@ -41,11 +39,9 @@ def summarize_data(df):
 def display_r2(df):
     """Calculate and display the absolute R^2 values."""
     if 'University Performance GPA (Z)' in df.columns:
-        st.markdown("**Coefficient of Determination (R2)**")
         r2_xz = abs(r2_score(df['Raw College GPA (X)'], df['University Performance GPA (Z)']))
         r2_yz = abs(r2_score(df['Moderated GPA (Y)'], df['University Performance GPA (Z)']))
-        st.write(f"R2 for Raw College GPA vs University Performance GPA: **{r2_xz:.2f}**")
-        st.write(f"R2 for Moderated GPA vs University Performance GPA: **{r2_yz:.2f}**")
+    
 
 # Plot histograms
 def plot_histograms(df, column, hue, palette,bins=20, kde=True, alpha=0.5, ax=None, title=None):

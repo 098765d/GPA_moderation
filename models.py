@@ -110,15 +110,18 @@ def predict_mean_adjust_model(df, model_stats):
     )
     return df
 
-
-def train_hkeaa_model_1(df):
+def train_reg_std_model(df):
     """Train the moderation model and return the calculated statistics."""
     MODEL_STATS = {}
-    
-    # Train regression model for beta
-    model = LinearRegression()
-    model.fit(df[['University Performance GPA (Z)']], df['Raw College GPA (X)'])
-    beta = model.coef_[0]
+
+    # Train regression model for each college to get individual beta values
+    colleges = df['College'].unique()
+    beta_values = {}
+    for college in colleges:
+        college_data = df[df['College'] == college]
+        model = LinearRegression()
+        model.fit(college_data[['University Performance GPA (Z)']], college_data['Raw College GPA (X)'])
+        beta_values[college] = model.coef_[0]
 
     # Compute required statistics
     X_mean = df['Raw College GPA (X)'].mean()
@@ -133,17 +136,18 @@ def train_hkeaa_model_1(df):
     df['x_bar'] = df['College'].map(x_bars)
     df['s_z'] = df['College'].map(s_z)
     df['s_x'] = df['College'].map(s_x)
+    df['beta'] = df['College'].map(beta_values)  # Map individual beta values
 
-    # Calculate moderated GPA scores
+    # Calculate moderated GPA scores using college-specific beta values
     df['Moderated GPA (Y)'] = (
         X_mean +
-        beta * (df['z_bar'] - z_mean) +
+        df['beta'] * (df['z_bar'] - z_mean) +
         (df['Raw College GPA (X)'] - df['x_bar']) * (df['s_z'] / df['s_x'])
     )
 
     # Store model parameters
     MODEL_STATS = {
-        'beta': beta,
+        'beta_values': beta_values,
         'z_mean': z_mean,
         'z_bars': z_bars,
         's_z': s_z,
@@ -151,29 +155,76 @@ def train_hkeaa_model_1(df):
 
     return MODEL_STATS
 
-
-def predict_hkeaa_model_1(df, model_stats):
+def predict_reg_std_model(df, model_stats):
     """Apply the trained model to calculate moderated GPA marks."""
     # Extract statistics
-    beta = model_stats['beta']
+    beta_values = model_stats['beta_values']
     X_mean = df['Raw College GPA (X)'].mean()
     x_bars = df.groupby('College')['Raw College GPA (X)'].mean()
     z_mean = model_stats['z_mean']
     z_bars = model_stats['z_bars']
     s_x = df.groupby('College')['Raw College GPA (X)'].std()
     s_z = model_stats['s_z']
-    
+
     # Map group-level statistics to the DataFrame
     df['z_bar'] = df['College'].map(z_bars)
     df['s_z'] = df['College'].map(s_z)
     df['s_x'] = df['College'].map(s_x)
     df['x_bar'] = df['College'].map(x_bars)
+    df['beta'] = df['College'].map(beta_values)  # Map individual beta values
 
-    # Calculate moderated GPA scores
+    # Calculate moderated GPA scores using college-specific beta values
     df['Moderated GPA (Y)'] = (
         X_mean +
-        beta * (df['z_bar'] - z_mean) +
+        df['beta'] * (df['z_bar'] - z_mean) +
         (df['Raw College GPA (X)'] - df['x_bar']) * (df['s_z'] / df['s_x'])
     )
     st.dataframe(df.describe())
     return df
+
+
+def train_linear_regression_model(df):
+    """
+    Train a simple linear regression model where:
+    Z = intercept + beta * X
+    and store these parameters.
+    
+    Returns:
+        MODEL_STATS (dict): Contains 'beta' and 'intercept' of the fitted model.
+    """
+    MODEL_STATS = {}
+    
+    # Train regression model for beta
+    model = LinearRegression()
+    model.fit(df[['Raw College GPA (X)']], df['University Performance GPA (Z)'])
+    beta = model.coef_[0]
+    intercept = model.intercept_
+
+    # Store model parameters
+    MODEL_STATS = {
+        'k': beta,
+        'intercept': intercept
+    }
+
+    return MODEL_STATS
+
+
+def predict_linear_regression_model(df, model_stats):
+    """
+    Apply the trained linear regression model to calculate the moderated values 'yu'.
+    
+    Formula:
+    y = intercept + beta * X
+    
+    Where 'X' is the Raw College GPA (X).
+    """
+    # Extract statistics
+    beta = model_stats['k']
+    intercept = model_stats['intercept']
+    
+    # Apply the moderation formula
+    df['Moderated GPA (Y)'] = intercept + beta * df['Raw College GPA (X)']
+    return df
+
+
+

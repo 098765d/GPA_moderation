@@ -41,6 +41,9 @@ def display_r2(df):
     if 'University Performance GPA (Z)' in df.columns:
         r2_xz = abs(r2_score(df['Raw College GPA (X)'], df['University Performance GPA (Z)']))
         r2_yz = abs(r2_score(df['Moderated GPA (Y)'], df['University Performance GPA (Z)']))
+        r2_xz = round(r2_xz,2)
+        r2_yz = round(r2_yz,2)
+    return r2_xz,r2_yz
     
 
 # Plot histograms
